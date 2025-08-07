@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Account Indicator 設定</title>
+    <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>AWS Account Indicator</h1>
+            <p class="subtitle">アカウント設定</p>
+        </header>
+
+        <div class="current-account" id="currentAccount" style="display: none;">
+            <div class="current-account-info">
+                <span class="label">現在のアカウント:</span>
+                <span class="account-number" id="currentAccountNumber">-</span>
+                <span class="account-name" id="currentAccountName">-</span>
+            </div>
+            <button class="btn btn-small" id="quickConfigBtn">このアカウントを設定</button>
+        </div>
+
+        <div class="settings-section">
+            <div class="section-header">
+                <h2>アカウント設定</h2>
+                <button class="btn btn-primary" id="addAccountBtn">
+                    <span class="icon">+</span>
+                    アカウント追加
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="accounts-table" id="accountsTable">
+                    <thead>
+                        <tr>
+                            <th>アカウント番号</th>
+                            <th>表示名</th>
+                            <th>背景色</th>
+                            <th>プレビュー</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="accountsTableBody">
+                        <!-- 動的に生成される行 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="global-settings">
+            <h3>グローバル設定</h3>
+            <div class="setting-item">
+                <label class="setting-label">
+                    <input type="checkbox" id="enableWatermark" checked>
+                    <span class="checkmark"></span>
+                    アカウント名のウォーターマークを表示
+                </label>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">
+                    <input type="checkbox" id="enableHeaderColoring" checked>
+                    <span class="checkmark"></span>
+                    ヘッダーの色変更を有効にする
+                </label>
+            </div>
+            <div class="setting-item">
+                <label class="setting-label">
+                    <input type="checkbox" id="enableFooterColoring" checked>
+                    <span class="checkmark"></span>
+                    フッターの色変更を有効にする
+                </label>
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="openOptionsBtn">詳細設定を開く</button>
+            <button class="btn btn-secondary" id="exportBtn">設定エクスポート</button>
+            <button class="btn btn-secondary" id="importBtn">設定インポート</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+            <button class="btn btn-danger" id="resetBtn">設定リセット</button>
+        </div>
+
+        <div class="help-section">
+            <details>
+                <summary>使い方とヘルプ</summary>
+                <div class="help-content">
+                    <h4>基本的な使い方</h4>
+                    <ol>
+                        <li>「アカウント追加」ボタンでAWSアカウントを追加</li>
+                        <li>12桁のアカウント番号と表示名、背景色を設定</li>
+                        <li>AWSコンソールにアクセスすると自動的に識別されます</li>
+                    </ol>
+                    
+                    <h4>対応環境</h4>
+                    <ul>
+                        <li>AWS Management Console</li>
+                        <li>AWS SSO (AWS Identity Center)</li>
+                        <li>スイッチロール環境</li>
+                    </ul>
+                    
+                    <h4>ウォーターマークについて</h4>
+                    <p>ウォーターマークは画面内をドラッグして移動できます。位置は自動保存されます。</p>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+</html>
