@@ -6,10 +6,6 @@ class OptionsManager {
     this.currentAccount = null;
     this.globalSettings = {
       enableWatermark: true,
-      enableHeaderColoring: true,
-      enableFooterColoring: true,
-      enableNotifications: true,
-      enableBadge: true,
       watermarkOpacity: 0.3,
       watermarkSize: 48
     };
@@ -138,8 +134,7 @@ class OptionsManager {
 
   setupGlobalSettingsListeners() {
     const settingIds = [
-      'enableWatermark', 'enableHeaderColoring', 'enableFooterColoring',
-      'enableNotifications', 'enableBadge'
+      'enableWatermark'
     ];
 
     settingIds.forEach(id => {
@@ -252,13 +247,14 @@ class OptionsManager {
     row.innerHTML = `
       <td>
         <input type="checkbox" class="row-checkbox" data-account="${accountNumber}">
+        <span class="checkmark"></span>
         <input type="text" class="table-input" value="${accountNumber}" 
                placeholder="123456789012 または 1234-5678-9012" 
                data-field="accountNumber">
       </td>
       <td>
         <input type="text" class="table-input" value="${name}" 
-               placeholder="本番環境" data-field="name">
+               placeholder="本番環境" data-field="name" maxlength="25">
       </td>
       <td>
         <input type="color" class="color-input" value="${color}" 
@@ -294,10 +290,17 @@ class OptionsManager {
     const colorInput = row.querySelector('[data-field="color"]');
     const preview = row.querySelector('.color-preview');
     const checkbox = row.querySelector('.row-checkbox');
+    const checkmark = row.querySelector('.checkmark');
 
-    // チェックボックス
+    // チェックボックスとcheckmarkのクリックイベント
     checkbox.addEventListener('change', () => {
       this.updateBulkActions();
+    });
+
+    // checkmark要素のクリックイベント
+    checkmark.addEventListener('click', () => {
+      checkbox.checked = !checkbox.checked;
+      checkbox.dispatchEvent(new Event('change'));
     });
 
     // 色変更時のプレビュー更新
@@ -356,6 +359,12 @@ class OptionsManager {
 
     if (!name) {
       this.showNotification('表示名を入力してください', 'error');
+      nameInput.focus();
+      return;
+    }
+
+    if (name.length > 25) {
+      this.showNotification('表示名は25文字以内で入力してください', 'error');
       nameInput.focus();
       return;
     }
@@ -521,10 +530,6 @@ class OptionsManager {
       this.settings = {};
       this.globalSettings = {
         enableWatermark: true,
-        enableHeaderColoring: true,
-        enableFooterColoring: true,
-        enableNotifications: true,
-        enableBadge: true,
         watermarkOpacity: 0.3,
         watermarkSize: 48
       };

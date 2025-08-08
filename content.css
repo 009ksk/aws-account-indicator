@@ -32,63 +32,6 @@
   opacity: 0.9;
 }
 
-/* AWS UI要素の強制的なスタイル適用 */
-.awsui-app-layout-navigation,
-.awsui-app-layout-navigation-panel,
-[data-testid="app-layout-navigation"],
-.ccl-navigation-panel,
-#consoleNavPanel {
-  transition: background-color 0.3s ease, color 0.3s ease !important;
-}
-
-/* ヘッダー内のリンクとボタンのスタイル調整 */
-.awsui-app-layout-navigation a,
-.awsui-app-layout-navigation button,
-.awsui-app-layout-navigation span,
-.awsui-app-layout-navigation div,
-.ccl-navigation-panel a,
-.ccl-navigation-panel button,
-.ccl-navigation-panel span,
-.ccl-navigation-panel div {
-  transition: color 0.3s ease !important;
-}
-
-/* ドロップダウンメニューなどの子要素も対応 */
-.awsui-app-layout-navigation .awsui-button,
-.awsui-app-layout-navigation .awsui-menu-dropdown,
-.ccl-navigation-panel .awsui-button,
-.ccl-navigation-panel .awsui-menu-dropdown {
-  transition: background-color 0.3s ease, color 0.3s ease !important;
-}
-
-/* フッター要素のスタイル */
-footer,
-.awsui-app-layout-content-bottom,
-[data-testid="app-layout-content-bottom"] {
-  transition: background-color 0.3s ease, color 0.3s ease !important;
-}
-
-/* ダークモード対応 */
-@media (prefers-color-scheme: dark) {
-  .aws-account-watermark {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-  
-  .aws-account-watermark:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.4);
-  }
-}
-
-/* 画面の隅に配置された時の特別なスタイル */
-.aws-account-watermark.corner-position {
-  font-size: 32px;
-  padding: 10px 15px;
-  max-width: 200px;
-}
-
 /* モバイル対応 */
 @media (max-width: 768px) {
   .aws-account-watermark {
@@ -96,20 +39,4 @@ footer,
     padding: 10px;
     max-width: 150px;
   }
-}
-
-/* アニメーション効果 */
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.aws-account-watermark {
-  animation: fadeIn 0.5s ease-out;
 }

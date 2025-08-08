@@ -44,11 +44,6 @@ body {
     opacity: 0.9;
 }
 
-.header-actions {
-    display: flex;
-    gap: 12px;
-}
-
 /* メインコンテンツ */
 .main-content {
     padding: 30px;
@@ -198,6 +193,7 @@ body {
     overflow: hidden;
     margin-bottom: 20px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    min-height: 300px;
 }
 
 .accounts-table {
@@ -245,6 +241,49 @@ body {
     outline: none;
     border-color: #ff9500;
     box-shadow: 0 0 0 2px rgba(255, 149, 0, 0.25);
+}
+
+/* アカウント番号セルのレイアウト */
+.accounts-table td:first-child {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.row-checkbox {
+    display: none;
+}
+
+.row-checkbox + .checkmark {
+    width: 20px;
+    height: 20px;
+    border: 2px solid #ced4da;
+    border-radius: 4px;
+    display: inline-block;
+    position: relative;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.row-checkbox:checked + .checkmark {
+    background: #ff9500;
+    border-color: #ff9500;
+}
+
+.row-checkbox:checked + .checkmark::after {
+    content: '✓';
+    color: white;
+    font-size: 14px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.accounts-table td:first-child .table-input {
+    flex: 1;
+    min-width: 0;
 }
 
 .color-input {
@@ -482,14 +521,37 @@ input[type="range"] {
 /* 空の状態 */
 .empty-state {
     text-align: center;
-    padding: 60px 20px;
+    padding: 80px 40px;
     color: #666;
+    background: #f8f9fa;
+    border-radius: 12px;
+    margin: 30px;
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
 .empty-state .icon {
-    font-size: 64px;
-    margin-bottom: 20px;
+    font-size: 72px;
+    margin-bottom: 24px;
     display: block;
+    opacity: 0.6;
+}
+
+.empty-state h3 {
+    font-size: 20px;
+    margin-bottom: 16px;
+    color: #495057;
+    font-weight: 600;
+}
+
+.empty-state p {
+    font-size: 16px;
+    color: #6c757d;
+    margin: 0;
+    line-height: 1.5;
 }
 
 /* レスポンシブ対応 */
@@ -543,37 +605,6 @@ input[type="range"] {
     }
 }
 
-/* アニメーション */
-.fade-in {
-    animation: fadeIn 0.5s ease-out;
-}
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
 
-/* スクロールバー */
-::-webkit-scrollbar {
-    width: 8px;
-}
 
-::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #ccc;
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #999;
-}
