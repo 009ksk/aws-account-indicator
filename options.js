@@ -3,14 +3,16 @@
 class OptionsManager {
   constructor() {
     this.settings = {};
+    this.roleSettings = {};  // スイッチロール設定
     this.currentAccount = null;
+    this.currentRole = null; // 現在のスイッチロール情報
     this.globalSettings = {
       enableWatermark: true,
       watermarkOpacity: 0.3,
       watermarkSize: 48
     };
     this.selectedRows = new Set();
-    
+
     this.init();
   }
 
@@ -19,14 +21,17 @@ class OptionsManager {
     await this.getCurrentAccountInfo();
     this.setupEventListeners();
     this.renderAccountsTable();
+    this.renderRolesTable();
     this.updateCurrentAccountDisplay();
+    this.updateCurrentRoleDisplay();
     this.updateGlobalSettings();
   }
 
   async loadSettings() {
     try {
-      const result = await chrome.storage.sync.get(['awsAccountSettings', 'globalSettings']);
+      const result = await chrome.storage.sync.get(['awsAccountSettings', 'globalSettings', 'roleSettings']);
       this.settings = result.awsAccountSettings || {};
+      this.roleSettings = result.roleSettings || {};
       this.globalSettings = { ...this.globalSettings, ...(result.globalSettings || {}) };
     } catch (error) {
       console.error('設定の読み込みに失敗しました:', error);
@@ -37,6 +42,7 @@ class OptionsManager {
     try {
       await chrome.storage.sync.set({
         awsAccountSettings: this.settings,
+        roleSettings: this.roleSettings,
         globalSettings: this.globalSettings
       });
       this.showNotification('設定を保存しました', 'success');
@@ -48,16 +54,26 @@ class OptionsManager {
 
   async getCurrentAccountInfo() {
     try {
-      const tabs = await chrome.tabs.query({ 
+      const tabs = await chrome.tabs.query({
         url: ["https://*.amazonaws.com/*", "https://*.aws.amazon.com/*"]
       });
-      
+
       if (tabs.length > 0) {
         for (const tab of tabs) {
           try {
             const response = await chrome.tabs.sendMessage(tab.id, { action: 'getCurrentAccount' });
             if (response && response.accountNumber) {
               this.currentAccount = response;
+              // スイッチロール情報も取得
+              if (response.isSwitchRole) {
+                this.currentRole = {
+                  // スイッチ元アカウントを使用（オプション2）
+                  sourceAccountNumber: response.switchRoleSourceAccount || response.accountNumber,
+                  roleName: response.roleName,
+                  roleDisplayName: response.roleDisplayName,
+                  roleKey: response.roleKey
+                };
+              }
               break;
             }
           } catch (error) {
@@ -130,6 +146,22 @@ class OptionsManager {
     document.getElementById('clearStorageBtn').addEventListener('click', () => {
       this.clearStorage();
     });
+
+    // スイッチロール設定
+    document.getElementById('addRoleBtn').addEventListener('click', () => {
+      this.addRoleRow();
+    });
+
+    document.getElementById('quickRoleConfigBtn').addEventListener('click', () => {
+      if (this.currentRole) {
+        // スイッチ元アカウント番号を使用
+        this.addRoleRow(
+          this.currentRole.sourceAccountNumber,
+          this.currentRole.roleName,
+          this.currentRole.roleDisplayName
+        );
+      }
+    });
   }
 
   setupGlobalSettingsListeners() {
@@ -177,6 +209,24 @@ class OptionsManager {
     }
   }
 
+  updateCurrentRoleDisplay() {
+    const currentRoleDiv = document.getElementById('currentRole');
+    const roleNameSpan = document.getElementById('currentRoleName');
+    const roleAccountSpan = document.getElementById('currentRoleAccount');
+    const quickRoleBtn = document.getElementById('quickRoleConfigBtn');
+
+    if (this.currentRole && this.currentRole.roleName) {
+      currentRoleDiv.style.display = 'flex';
+      quickRoleBtn.style.display = 'inline-flex';
+      roleNameSpan.textContent = this.currentRole.roleDisplayName || this.currentRole.roleName;
+      // スイッチ元アカウント番号を表示
+      roleAccountSpan.textContent = this.currentRole.sourceAccountNumber + ' (スイッチ元)';
+    } else {
+      currentRoleDiv.style.display = 'none';
+      quickRoleBtn.style.display = 'none';
+    }
+  }
+
   updateGlobalSettings() {
     // チェックボックス
     Object.keys(this.globalSettings).forEach(key => {
@@ -215,6 +265,34 @@ class OptionsManager {
     Object.entries(this.settings).forEach(([accountNumber, config]) => {
       this.addAccountRow(accountNumber, config.name, config.color, config.lastUpdated);
     });
+  }
+
+  renderRolesTable() {
+    const tbody = document.getElementById('rolesTableBody');
+    tbody.innerHTML = '';
+
+    if (Object.keys(this.roleSettings).length === 0) {
+      this.showRoleEmptyState();
+      return;
+    }
+
+    Object.entries(this.roleSettings).forEach(([roleKey, config]) => {
+      const [accountNumber, roleName] = roleKey.split(':');
+      this.addRoleRow(accountNumber, roleName, config.name, config.color);
+    });
+  }
+
+  showRoleEmptyState() {
+    const tbody = document.getElementById('rolesTableBody');
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td colspan="6" class="empty-state">
+        <div class="icon">🔄</div>
+        <h3>スイッチロール設定がありません</h3>
+        <p>「ロール追加」ボタンから設定を開始するか、スイッチロール中に「現在のロールを設定」をクリックしてください</p>
+      </td>
+    `;
+    tbody.appendChild(row);
   }
 
   showEmptyState() {
@@ -390,20 +468,174 @@ class OptionsManager {
 
   deleteAccountRow(row) {
     const accountNumber = row.querySelector('[data-field="accountNumber"]').value.trim();
-    
+
     if (accountNumber && this.settings[accountNumber]) {
       if (confirm(`アカウント ${accountNumber} (${this.settings[accountNumber].name}) の設定を削除しますか？`)) {
         delete this.settings[accountNumber];
         this.saveSettings();
         row.remove();
-        
+
         // テーブルが空になった場合は空の状態を表示
         const tbody = document.getElementById('accountsTableBody');
         if (tbody.children.length === 0) {
           this.showEmptyState();
         }
-        
+
         this.updateBulkActions();
+      }
+    } else {
+      row.remove();
+    }
+  }
+
+  // スイッチロール設定用のメソッド
+  addRoleRow(accountNumber = '', roleName = '', displayName = '', color = '#e74c3c') {
+    const tbody = document.getElementById('rolesTableBody');
+
+    // 空の状態表示を削除
+    if (tbody.querySelector('.empty-state')) {
+      tbody.innerHTML = '';
+    }
+
+    const row = document.createElement('tr');
+    row.className = 'fade-in';
+
+    const textColor = this.getContrastingTextColor(color);
+
+    row.innerHTML = `
+      <td>
+        <input type="text" class="table-input" value="${accountNumber}"
+               placeholder="スイッチ元のアカウントID" data-field="roleAccountNumber">
+      </td>
+      <td>
+        <input type="text" class="table-input" value="${roleName}"
+               placeholder="ロール表示名 (例: DevVodStream)" data-field="roleName">
+      </td>
+      <td>
+        <input type="text" class="table-input" value="${displayName}"
+               placeholder="本番管理者" data-field="roleDisplayName" maxlength="25">
+      </td>
+      <td>
+        <input type="color" class="color-input" value="${color}"
+               data-field="roleColor">
+      </td>
+      <td>
+        <div class="color-preview">
+          <div class="color-swatch" style="background-color: ${color};"></div>
+          <span class="text-color-preview" style="background-color: ${color}; color: ${textColor};">
+            サンプル
+          </span>
+        </div>
+      </td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn btn-icon save" title="保存" style="background: #28a745; color: white;">💾</button>
+          <button class="btn btn-icon delete" title="削除" style="background: #dc3545; color: white;">🗑️</button>
+        </div>
+      </td>
+    `;
+
+    tbody.appendChild(row);
+    this.setupRoleRowEventListeners(row);
+  }
+
+  setupRoleRowEventListeners(row) {
+    const inputs = row.querySelectorAll('input');
+    const saveBtn = row.querySelector('.save');
+    const deleteBtn = row.querySelector('.delete');
+    const colorInput = row.querySelector('[data-field="roleColor"]');
+    const preview = row.querySelector('.color-preview');
+
+    // 色変更時のプレビュー更新
+    colorInput.addEventListener('input', (e) => {
+      const color = e.target.value;
+      const textColor = this.getContrastingTextColor(color);
+      const swatch = preview.querySelector('.color-swatch');
+      const textPreview = preview.querySelector('.text-color-preview');
+
+      swatch.style.backgroundColor = color;
+      textPreview.style.backgroundColor = color;
+      textPreview.style.color = textColor;
+    });
+
+    // 保存ボタン
+    saveBtn.addEventListener('click', () => {
+      this.saveRoleRow(row);
+    });
+
+    // 削除ボタン
+    deleteBtn.addEventListener('click', () => {
+      this.deleteRoleRow(row);
+    });
+
+    // Enterキーで保存
+    inputs.forEach(input => {
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.saveRoleRow(row);
+        }
+      });
+    });
+  }
+
+  saveRoleRow(row) {
+    const accountNumberInput = row.querySelector('[data-field="roleAccountNumber"]');
+    const roleNameInput = row.querySelector('[data-field="roleName"]');
+    const displayNameInput = row.querySelector('[data-field="roleDisplayName"]');
+    const colorInput = row.querySelector('[data-field="roleColor"]');
+
+    const accountNumber = accountNumberInput.value.trim().replace(/[-\s]/g, '');
+    const roleName = roleNameInput.value.trim();
+    const displayName = displayNameInput.value.trim();
+    const color = colorInput.value;
+
+    // バリデーション
+    if (!accountNumber || !/^\d{12}$/.test(accountNumber)) {
+      this.showNotification('アカウント番号は12桁の数字で入力してください', 'error');
+      accountNumberInput.focus();
+      return;
+    }
+
+    if (!roleName) {
+      this.showNotification('ロール名を入力してください', 'error');
+      roleNameInput.focus();
+      return;
+    }
+
+    // ロールキーを生成
+    const roleKey = `${accountNumber}:${roleName}`;
+
+    // 設定を保存
+    this.roleSettings[roleKey] = {
+      name: displayName || roleName,
+      color,
+      lastUpdated: new Date().toISOString()
+    };
+    this.saveSettings();
+
+    // 行にsaved状態を示すスタイルを一時的に適用
+    row.style.backgroundColor = '#d4edda';
+    setTimeout(() => {
+      row.style.backgroundColor = '';
+    }, 1000);
+  }
+
+  deleteRoleRow(row) {
+    const accountNumber = row.querySelector('[data-field="roleAccountNumber"]').value.trim().replace(/[-\s]/g, '');
+    const roleName = row.querySelector('[data-field="roleName"]').value.trim();
+    const roleKey = `${accountNumber}:${roleName}`;
+
+    if (roleKey && this.roleSettings[roleKey]) {
+      if (confirm(`ロール設定 ${roleName} (${accountNumber}) を削除しますか？`)) {
+        delete this.roleSettings[roleKey];
+        this.saveSettings();
+        row.remove();
+
+        // テーブルが空になった場合は空の状態を表示
+        const tbody = document.getElementById('rolesTableBody');
+        if (tbody.children.length === 0) {
+          this.showRoleEmptyState();
+        }
       }
     } else {
       row.remove();
@@ -482,9 +714,10 @@ class OptionsManager {
   exportSettings() {
     const data = {
       awsAccountSettings: this.settings,
+      roleSettings: this.roleSettings,
       globalSettings: this.globalSettings,
       exportDate: new Date().toISOString(),
-      version: '1.0.0'
+      version: '1.1.0'
     };
 
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -508,13 +741,17 @@ class OptionsManager {
       if (data.awsAccountSettings) {
         if (confirm('現在の設定を上書きしてインポートしますか？')) {
           this.settings = data.awsAccountSettings;
+          this.roleSettings = data.roleSettings || {};
           this.globalSettings = { ...this.globalSettings, ...(data.globalSettings || {}) };
-          
+
           await this.saveSettings();
           this.renderAccountsTable();
+          this.renderRolesTable();
           this.updateGlobalSettings();
-          
-          this.showNotification(`${Object.keys(data.awsAccountSettings).length}個のアカウント設定をインポートしました`, 'success');
+
+          const accountCount = Object.keys(data.awsAccountSettings).length;
+          const roleCount = Object.keys(data.roleSettings || {}).length;
+          this.showNotification(`${accountCount}個のアカウント、${roleCount}個のロール設定をインポートしました`, 'success');
         }
       } else {
         this.showNotification('無効な設定ファイルです', 'error');
@@ -528,14 +765,16 @@ class OptionsManager {
   resetSettings() {
     if (confirm('すべての設定をリセットしますか？この操作は元に戻せません。')) {
       this.settings = {};
+      this.roleSettings = {};
       this.globalSettings = {
         enableWatermark: true,
         watermarkOpacity: 0.3,
         watermarkSize: 48
       };
-      
+
       this.saveSettings();
       this.renderAccountsTable();
+      this.renderRolesTable();
       this.updateGlobalSettings();
     }
   }

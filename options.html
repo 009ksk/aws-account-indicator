@@ -86,6 +86,56 @@
                 </div>
             </div>
 
+            <div class="settings-section">
+                <div class="section-header">
+                    <h2>スイッチロール設定</h2>
+                    <div class="header-actions">
+                        <button class="btn btn-success" id="addRoleBtn">
+                            <span class="icon">+</span>
+                            ロール追加
+                        </button>
+                        <button class="btn btn-primary" id="quickRoleConfigBtn" style="display: none;">
+                            <span class="icon">⚡</span>
+                            現在のロールを設定
+                        </button>
+                    </div>
+                </div>
+
+                <p class="section-description">スイッチロール時に表示するロール名と色を設定できます。スイッチ元アカウント番号とロール名の組み合わせで識別します。</p>
+
+                <div class="current-role" id="currentRole" style="display: none;">
+                    <div class="current-role-info">
+                        <span class="role-badge">スイッチロール中</span>
+                        <div class="role-details">
+                            <span class="label">ロール名:</span>
+                            <span class="role-name" id="currentRoleName">-</span>
+                        </div>
+                        <div class="role-details">
+                            <span class="label">アカウント:</span>
+                            <span class="role-account" id="currentRoleAccount">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="accounts-table" id="rolesTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 140px;">スイッチ元アカウント</th>
+                                <th style="width: 150px;">ロール名</th>
+                                <th style="width: 150px;">表示名</th>
+                                <th style="width: 100px;">背景色</th>
+                                <th style="width: 120px;">プレビュー</th>
+                                <th style="width: 100px;">操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rolesTableBody">
+                            <!-- 動的に生成される行 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <div class="global-settings">
                 <h3>グローバル設定</h3>
                 <div class="settings-grid">
